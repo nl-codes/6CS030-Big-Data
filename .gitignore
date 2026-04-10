@@ -1,3 +1,6 @@
+# .csv
+assessment/dataset/oulad/*.csv
+
 # Word file
 **/*.docx
 .DS_Store
