@@ -1,3 +1,7 @@
+# Java files
+**/*.class
+**/*.jar
+
 # .csv
 assessment/dataset/oulad/*.csv
 
