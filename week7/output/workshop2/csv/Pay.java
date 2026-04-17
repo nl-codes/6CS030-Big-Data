@@ -1,6 +1,6 @@
 /*
    *************************************************************
-   Java file to total up the figures in the population csv files
+   Java file to total up the figures in the pay csv files
    MG March 2019
    *************************************************************
 */
@@ -16,9 +16,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class Population {
+public class Pay {
 
-	public static class PopMapper extends Mapper<Object, Text, Text, Text> {
+	public static class PayMapper extends Mapper<Object, Text, Text, Text> {
 		public void map(Object key, Text value, Context context)
 				throws IOException, InterruptedException {
 
@@ -31,20 +31,20 @@ public class Population {
 			else
 				context.write(new Text(parts[0]), new Text("0"));
 		} // map
-	} // PopMapper
+	} // PayMapper
 
 	public static class csvReducer extends Reducer<Text, Text, Text, Text> {
 		public void reduce(Text key, Iterable<Text> values, Context context)
 				throws IOException, InterruptedException {
-			String popName = "";
-			int popTotal = 0;
-			int popCount = 0;
+			String payName = "";
+			float payTotal = 0;
+			int payCount = 0;
 			for (Text t : values) {
 				String parts[] = t.toString().split("\t");
-				popCount++;
-				popTotal += Integer.parseInt(parts[0]);
+				payCount++;
+				payTotal += Float.parseFloat(parts[0]);
 			} // for loop
-			String str = String.format("%d,%d", popCount, popTotal);
+			String str = String.format("%d,%f", payCount, payTotal);
 			context.write(new Text(key), new Text(str));
 		} // reduce
 	} // csvReducer
@@ -54,9 +54,9 @@ public class Population {
 		// set output delimiter to comma
 		conf.set("mapreduce.output.textoutputformat.separator", ",");
 
-		Job job = Job.getInstance(conf, "Population Count");
-		job.setJarByClass(Population.class);
-		job.setMapperClass(PopMapper.class);
+		Job job = Job.getInstance(conf, "Pay Count");
+		job.setJarByClass(Pay.class);
+		job.setMapperClass(PayMapper.class);
 		job.setReducerClass(csvReducer.class);
 		job.setOutputKeyClass(Text.class);
 		job.setOutputValueClass(Text.class);
@@ -70,4 +70,4 @@ public class Population {
 		outputPath.getFileSystem(conf).delete(outputPath, true);
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	} // main
-} // Population class
+} // Pay class
