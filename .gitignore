@@ -1,3 +1,6 @@
+# debry db metadata
+**/metastore_db/
+
 # Java files
 **/*.class
 **/*.jar
