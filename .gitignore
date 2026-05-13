@@ -1,3 +1,5 @@
+# secrets
+/secrets
 # debry db metadata
 **/metastore_db/
 
