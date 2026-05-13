@@ -1,5 +1,8 @@
 # secrets
 /secrets
+
+# research-papers
+papers/
 # debry db metadata
 **/metastore_db/
 
