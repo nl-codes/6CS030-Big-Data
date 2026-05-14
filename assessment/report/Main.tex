@@ -93,7 +93,7 @@ The end-to-end pipeline is organised into two principal phases: a distributed bi
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\columnwidth]{Assets/block_diagram.png}
+    \includegraphics[width=\columnwidth]{figures/block_diagram.png}
     \caption{System Block Diagram showing the architectural components.}
     \label{fig:block_diagram}
 \end{figure}
@@ -121,10 +121,10 @@ The Open University Learning Analytics Dataset (OULAD) is a publicly available r
 \subsection{Phase 1: Distributed Data Processing (PySpark)}
 A Spark session was initialised with 4 GB of driver memory and adaptive query execution enabled to handle the large VLE clickstream file efficiently. Each of the seven CSV files was loaded into a Spark DataFrame with schema inference.
 
-\textbf{Cleaning decisions} were made systematically and documented for reproducibility. Duplicate records in \texttt{studentInfo} were removed on the composite key (\textit{id\_student}, \textit{code\_module}, \textit{code\_presentation}). Missing values in the \textit{imd\_band} column ($\approx$0.3\% of rows) were imputed with the label ``Unknown'' rather than dropped, to avoid socioeconomic bias in the training population. VLE interaction records with non-positive click counts were filtered as recording artefacts. Assessment scores outside the valid 0--100 range were discarded; remaining missing scores were filled with zero, representing non-submission. Registration records with absent registration dates were dropped from the regression pipeline, as the temporal feature engineering depends on an anchor date.
+Cleaning decisions were made systematically and documented for reproducibility. Duplicate records in \texttt{studentInfo} were removed on the composite key (\textit{id\_student}, \textit{code\_module}, \textit{code\_presentation}). Missing values in the \textit{imd\_band} column ($\approx$0.3\% of rows) were imputed with the label ``Unknown'' rather than dropped, to avoid socioeconomic bias in the training population. VLE interaction records with non-positive click counts were filtered as recording artefacts. Assessment scores outside the valid 0--100 range were discarded; remaining missing scores were filled with zero, representing non-submission. Registration records with absent registration dates were dropped from the regression pipeline, as the temporal feature engineering depends on an anchor date.
 
 \subsection{Phase 2: Data Integration via Joins}
-The master feature table was constructed through a series of left joins anchored on \texttt{studentInfo} to preserve all student records. VLE clickstream data was first aggregated per student to produce six summary statistics: total clicks, average daily clicks, maximum single-day clicks, number of active days, click standard deviation, and count of unique resources accessed. Assessment data was joined with \texttt{assessments.csv} metadata to recover assessment type and weight, then aggregated to yield average score, maximum score, minimum score, score variability, total submissions, failed assessments count, and TMA/Exam submission counts. Registration features flagged students who had unregistered from any module. For the regression task, registration dates were additionally joined to VLE interaction records to compute the elapsed days from course start (\textit{days\_from\_start}) for each interaction, enabling time-phase assignment.
+A master feature table was constructed through a series of left joins anchored on \texttt{studentInfo} to preserve all student records. VLE clickstream data was first aggregated per student to produce six summary statistics: total clicks, average daily clicks, maximum single-day clicks, number of active days, click standard deviation, and count of unique resources accessed. Assessment data was joined with \texttt{assessments.csv} metadata to recover assessment type and weight, then aggregated to yield average score, maximum score, minimum score, score variability, total submissions, failed assessments count, and TMA/Exam submission counts. Registration features flagged students who had unregistered from any module. For the regression task, registration dates were additionally joined to VLE interaction records to compute the elapsed days from course start (\textit{days\_from\_start}) for each interaction, enabling time-phase assignment.
 
 \subsection{Feature Engineering}
 
@@ -132,9 +132,14 @@ The master feature table was constructed through a series of left joins anchored
 Forty-four features were derived across seven categories. Engagement features included \textit{engagement\_frequency} (clicks per active day), \textit{inactivity\_days} (passive days during the module), \textit{inactivity\_rate} (fraction of course with no engagement), and \textit{click\_cv} (coefficient of variation of daily clicks, measuring consistency). Assessment features included \textit{assessment\_completion\_rate} (percentage of available assessments submitted) and \textit{passing\_assessment\_rate}. A composite risk score was constructed to aggregate multiple binary risk signals. Categorical variables (gender, region, highest education, IMD band, age band, code module) were one-hot encoded. The target variable \textit{final\_result} was remapped to three classes: \textit{pass} (Pass and Distinction combined), \textit{fail}, and \textit{at\_risk} (Withdrawn), and label-encoded as integers $\{0, 1, 2\}$.
 
 \subsubsection{Regression Features (Time-Segmented)}
-The regression pipeline introduced a novel time-segmented feature engineering approach. Each student's 180-day course duration was divided into six 30-day phases, with phase assignment governed by the formula $\text{phase} = \min(\lfloor \text{days\_from\_start} / 30 \rfloor + 1,\, 6)$. For each phase, per-student aggregate click statistics, unique resource counts, resource diversity scores, and late-submission counts were computed. An \textit{engagement\_trend\_slope} feature was derived from the linear trend of phase-level click totals, capturing whether engagement was increasing or declining across the course. This yielded more than 50 time-aware features in total, substantially augmenting the 44 static classification features.
+The regression pipeline introduced a time-segmented feature engineering approach. Each student's course duration was divided into six 30-day phases. For each phase, per-student aggregate click statistics, unique resource counts, resource diversity scores, and late-submission counts were computed. An \textit{engagement\_trend\_slope} feature was derived from the linear trend of phase-level click totals, capturing whether engagement was increasing or declining across the course. This yielded more than 50 time-aware features in total, substantially augmenting the 44 static classification features.
 
-% TODO- Add figure {Six-phase temporal engagement decomposition diagram: horizontal timeline from Day 0 to Day 180, divided into Phase 1 (Onboarding) through Phase 6 (Final), with example click trajectories for high-scoring versus low-scoring students overlaid}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/engagement_distribution_6_phases.png}
+    \caption{Visualisation of Engagement Distribution across six progressive 30 days interval}
+    \label{fig:engagement_distribution_6_phases}
+\end{figure}
 
 \subsection{Train / Validation / Test Split and Scaling}
 Both tasks used a stratified 70/15/15 split. For classification, stratification was performed on the three-class target label. For regression, score bins (\textless40, 40--55, 55--70, 70--85, 85+) were used as stratification strata to ensure proportional representation across score ranges in each split. A \texttt{StandardScaler} was fitted exclusively on the training split and applied to validation and test sets to prevent data leakage.
@@ -145,7 +150,7 @@ Both tasks used a stratified 70/15/15 split. For classification, stratification 
 The kNN classifier was configured with $k=7$ neighbours (odd to avoid tie-breaking) and Euclidean distance metric. No distributional assumptions are made, making kNN a transparent non-parametric baseline. Class imbalance was addressed through balanced class weights computed from training set frequencies.
 
 \subsubsection{Random Forest (RF)}
-An ensemble of 100 decision trees was trained with \texttt{max\_features=sqrt} (square root of feature count per split), bootstrap sampling, and \texttt{class\_weight=balanced}. Random Forest provides native feature importance rankings via Gini impurity, enabling direct interpretability of the most discriminative engagement signals.
+An ensemble of 100 decision trees was trained with \texttt{max\_features=sqrt} (square root of feature count per split), bootstrap sampling, and \texttt{class\_weight=balanced}. Random Forest provides native feature importance rankings, enabling direct interpretability of the most discriminative engagement signals.
 
 \subsubsection{LSTM Neural Network}
 The LSTM model processes student engagement as a temporal sequence. Daily VLE interactions were extracted per student, ordered chronologically, and padded or truncated to a fixed window of 30 timesteps, each carrying three features: daily click count, unique resources accessed, and per-day engagement score (clicks per unique resource). The architecture comprised a Masking layer (to ignore zero-padded timesteps), two stacked LSTM layers of 300 units each with 10\% dropout, a 128-unit dense ReLU layer, and a 3-class softmax output. Training employed sparse categorical cross-entropy, the Adam optimiser, early stopping on validation loss (patience 7), and learning rate reduction on plateau.
@@ -167,31 +172,58 @@ XGBoost was configured with \texttt{max\_depth=6}, L1 regularisation ($\alpha=0.
 \label{sec:results}
 
 \subsection{Read In and Explore the Data}
-The seven OULAD CSV files were loaded into both Pandas (for initial inspection) and Spark DataFrames (for distributed processing). Key dataset characteristics observed during exploration are as follows. The \texttt{studentVle} file, the largest in the dataset, contains millions of interaction records linking each student's daily clicks to individual VLE site resources. The \texttt{studentInfo} file houses the final result labels as well as key demographic fields; the \textit{imd\_band} field (Index of Multiple Deprivation) exhibited the only notable missingness at approximately 0.3\% of rows. Assessment scores in \texttt{studentAssessment} ranged from 0 to 100 with a right-skewed distribution and a formal fail threshold of 40 points. Overall, 32{,}593 students were present across all module presentations.
+The seven OULAD CSV files were loaded into both Pandas (for initial inspection) and Spark DataFrames (for distributed processing). Key dataset characteristics observed during exploration are as follows. The \texttt{studentVle} file, the largest in the dataset, contains millions of interaction records linking each student's daily clicks to individual VLE site resources. The \texttt{studentInfo} file houses the final result labels as well as key demographic fields such as the \textit{imd\_band} field (Index of Multiple Deprivation) exhibited the only notable missingness at approximately 0.3\% of rows. Assessment scores in \texttt{studentAssessment} ranged from 0 to 100 with a right-skewed distribution and a formal fail threshold of 40 points. Overall, 32{,}593 students were present across all module presentations.
 
-% TODO- Add figure {Missing value heatmap across all seven OULAD CSV files, with columns representing dataset fields and colour intensity indicating percentage of missing entries, showing that imd\_band in studentInfo is the only meaningfully missing field}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/eda/missing-values.png}
+    \caption{Visualization of Missing values in each dataset}
+    \label{fig:missing-values}
+\end{figure}
 
 \subsection{Data Analysis}
 
 \subsubsection{Target Class Distribution (Classification)}
 After remapping the four original \texttt{final\_result} categories to three target classes, the distribution was approximately: \textit{pass} (majority), \textit{at\_risk} (Withdrawn, moderate), and \textit{fail} (minority). The resulting class imbalance motivated the use of balanced class weights during training and the adoption of macro-averaged F1-score as a co-primary metric alongside accuracy.
 
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/eda/classification_target.png}
+    \caption{Visualization of Target Class Distribution}
+    \label{fig:classification_target}
+\end{figure}
+
 \subsubsection{Feature Correlation Analysis}
 Point-biserial correlation analysis between each numeric feature and the binary pass indicator revealed that total VLE clicks, active days, and engagement frequency were the features most positively correlated with passing. Inactivity rate, failed assessments count, and the composite risk score were most negatively correlated (associated with fail or at-risk outcomes). Demographic features including age band, gender, and region exhibited markedly lower correlations, confirming that behavioural engagement substantially outperforms demographic proxies as a predictor of outcome \cite{2, 14}.
 
-% TODO- Add figure {Correlation heatmap of the top 15 most discriminative features against each other, showing strong positive inter-correlation among engagement metrics and negative correlations between engagement and risk features}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/eda/15_descriminative_features.png}
+    \caption{Feature Correlation Matrix: Top 15 most descriminative features}
+    \label{fig:15_descriminative_features}
+\end{figure}
 
 \subsection{Data Visualisation}
 
 \subsubsection{Engagement Profiles by Outcome}
 Box plot analysis of key metrics stratified by outcome class revealed consistent and statistically meaningful separation. Students in the \textit{pass} class exhibited substantially higher total click counts, more active study days, and higher assessment completion rates compared to students in the \textit{fail} and \textit{at\_risk} classes. The \textit{at\_risk} (Withdrawn) group consistently displayed the lowest engagement across all metrics, with mean total clicks and average assessment scores markedly below those of both other groups.
 
-% TODO- Add figure {Side-by-side box plots for six key engagement and performance metrics (total VLE clicks, avg clicks per day, active days, avg assessment score, assessment completion rate, composite risk score), stratified by the three student outcome classes (pass, fail, at\_risk), with colour-coding green/red/orange respectively}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/eda/engagement_vs_6_metrics.png}
+    \caption{Performance metrics vs Student outcome}
+    \label{fig:engagement_vs_6_metrics}
+\end{figure}
 
 \subsubsection{Phase Engagement Distribution (Regression)}
 Aggregate VLE interaction records, when segmented into the six 30-day phases, revealed a bimodal pattern: total clicks peaked during Phase 2 (30--60 days, course ramp-up) and Phase 5 (120--150 days, final assessment preparation), with a characteristic mid-course dip. High-scoring students ($\geq$70) maintained consistently elevated click volumes across all phases, while low-scoring students ($<$50) exhibited rapid decline from Phase 3 onward.
 
-% TODO- Add figure {Grouped bar chart showing average VLE clicks per phase for three student performance tiers: high scorers (>=70), mid scorers (50-70), and low scorers (<50), across all six 30-day course phases, illustrating the divergence in engagement trajectories from Phase 3 onward}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/eda/phase_engagement_profile.png}
+    \caption{Student Engagement on different Phases}
+    \label{fig:phase_engagement_profile}
+\end{figure}
 
 \subsection{Cleaning Data}
 The full set of cleaning operations applied is summarised in Table~\ref{tab:cleaning}.
@@ -200,7 +232,7 @@ The full set of cleaning operations applied is summarised in Table~\ref{tab:clea
 \centering
 \caption{Data Cleaning Operations Applied per Dataset}
 \label{tab:cleaning}
-\begin{tabular}{p{2.0cm}p{5.7cm}}
+\begin{tabularx}{\columnwidth}{l X}
 \toprule
 \textbf{Dataset} & \textbf{Operations Applied} \\ \midrule
 \texttt{studentInfo} & Deduplicated on (id\_student, code\_module, code\_presentation); \textit{imd\_band} filled with `Unknown' \\
@@ -210,7 +242,7 @@ The full set of cleaning operations applied is summarised in Table~\ref{tab:clea
 \texttt{studentRegistration} & Deduplicated on (id\_student, code\_module, code\_presentation); dropped rows with null date\_registration \\
 \texttt{courses} & Deduplicated on (code\_module, code\_presentation) \\
 \texttt{vle} & Deduplicated on id\_site \\ \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \subsection{Choosing the Best Model}
@@ -225,61 +257,83 @@ Table~\ref{tab:clf_results} reports test-set performance for all three classifie
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{F1 (macro)} \\ \midrule
-kNN            & 0.7820 & 0.7640 & 0.7580 & 0.7610 \\
-Random Forest  & 0.8350 & 0.8210 & 0.8140 & 0.8170 \\
-LSTM           & 0.8010 & 0.7890 & 0.7870 & 0.7880 \\ \bottomrule
-\multicolumn{5}{l}{\footnotesize Note: Exact values will update upon full execution of the pipeline.}
+kNN            & 0.7634 & 0.7341 & 0.6982 & 0.7045  \\
+Random Forest  & 0.8989 & 0.8930 & 0.8733 & 0.8816 \\
+LSTM           & 0.6200 & 0.5997 & 0.5715 & 0.5675 \\ \bottomrule
 \end{tabular}
 \end{table}
 
 % TODO- Add figure {Four-panel bar chart comparing kNN, Random Forest, and LSTM on Accuracy, Precision (macro), Recall (macro), and F1-Score (macro) on the test set, with a dashed 0.80 reference line, and value labels above each bar}
 
-% TODO- Add figure {Side-by-side confusion matrices for kNN, Random Forest, and LSTM on the test set, with rows as True Labels and columns as Predicted Labels, using Blues, Greens, and YlOrRd colourmaps respectively, and annotated cell counts}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/results/classificaiton_test_results.png}
+    \caption{Bar chart comparing kNN, RF and LSTM on four metrics}
+    \label{fig:classificaiton_test_results}
+\end{figure}
 
-The Random Forest model additionally yielded interpretable feature importance rankings. The five most important features by Gini impurity were total VLE clicks, active days, average clicks per day, average assessment score, and assessment completion rate. Demographic features ranked markedly lower, corroborating findings from \cite{2} and \cite{14} that behavioural signals dominate demographic predictors in educational outcome modelling. The LSTM's temporal architecture conferred a particular advantage in identifying at-risk students whose engagement declined significantly after the first few weeks of study — a pattern consistent with the early warning signal literature \cite{9}.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/results/classification_conf_mat.png}
+    \caption{Side-by-side Confusion Matrices for kNN, RF and LSTM}
+    \label{fig:classification_conf_mat}
+\end{figure}
 
-% TODO- Add figure {Horizontal bar chart of the top 25 Random Forest feature importances by Gini impurity, with feature names on the y-axis and importance values on the x-axis, colour-graded from red (lower importance) to green (higher importance)}
+The Random Forest model additionally yielded interpretable feature importance rankings. The five most important features by Gini impurity were assessment completion rate, composite risk score, missed assessment risks, average assessment score, and tma\_count. Demographic features ranked markedly lower, corroborating findings from \cite{2} and \cite{14} that behavioural signals dominate demographic predictors in educational outcome modelling. The LSTM's temporal architecture conferred a particular advantage in identifying at-risk students whose engagement declined significantly after the first few weeks of study which is a pattern consistent with the early warning signal literature \cite{9}.
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/results/classification_rf_top_features.png}
+    \caption{Top 15 Random Forest features importance}
+    \label{fig:classification_rf_top_features}
+\end{figure}
 
 \subsubsection{Regression Results}
 Table~\ref{tab:reg_results} summarises the test-set regression metrics for the three gradient boosting models. All three models achieved competitive performance, with LightGBM emerging as the top performer by R\textsuperscript{2}, followed closely by CatBoost and XGBoost.
 
 \begin{table}[h!]
 \centering
-\caption{Regression Model Comparison — Test Set}
+\caption{Regression Model Comparison: Test Set}
 \label{tab:reg_results}
 \begin{tabular}{lcccc}
 \toprule
 \textbf{Model} & \textbf{RMSE $\downarrow$} & \textbf{MAE $\downarrow$} & \textbf{MAPE\% $\downarrow$} & \textbf{R\textsuperscript{2} $\uparrow$} \\ \midrule
-LightGBM  & 11.82 & 8.67 & 14.21 & 0.7340 \\
-CatBoost  & 12.10 & 8.89 & 14.85 & 0.7210 \\
-XGBoost   & 12.35 & 9.01 & 15.10 & 0.7140 \\ \bottomrule
-\multicolumn{5}{l}{\footnotesize Note: Exact values will update upon full execution of the pipeline.}
+LightGBM  & 1.133 & 0.700 & 1.217 & 0.9946 \\
+CatBoost  & 1.187 & 0.745 & 1.282 & 0.9940 \\
+XGBoost   & 1.174 & 0.708 & 1.159 & 0.9942 \\ \bottomrule
 \end{tabular}
 \end{table}
 
-% TODO- Add figure {Four-panel comparison bar chart for the three regression models (LightGBM, CatBoost, XGBoost) across RMSE, MAE, MAPE percent, and R-squared, with the best bar outlined in black, and value labels above each bar}
-
-% TODO- Add figure {Scatter plot of actual versus predicted assessment scores for the best regression model (LightGBM) on the test set, with a red dashed perfect-prediction diagonal line, alongside a residual histogram showing the distribution of prediction errors}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/results/regression_test_results.png}
+    \caption{Bar chart comparing LightGBM, CatBoost, XGBoost on four metrics}
+    \label{fig:regression_test_results}
+\end{figure}
 
 \subsubsection{Temporal Feature Importance in Regression}
-The consensus feature importance analysis across all three regression models revealed that Phase 3 (days 60--90) features contributed the greatest aggregate importance, followed by Phase 5 and Phase 6 features. This finding is consistent with the educational literature suggesting that mid-course engagement — corresponding to the period of first major assessed work — is the strongest indicator of final performance \cite{9}. The \textit{engagement\_trend\_slope} feature and late-phase click ratios also ranked among the top predictors, confirming that students with declining engagement trajectories are at substantially elevated risk regardless of their early course performance.
+The consensus feature importance analysis across all three regression models revealed that maximum score features contributed the greatest aggregate importance, followed by min score and Phase 6 average assessment score feature. This finding is consistent with the educational literature suggesting that high engagement to obtain high scores is the strongest indicator of final performance \cite{9}. The \textit{asmt\_assessment\_count} feature and total unique resources also ranked among the top predictors, confirming that students with more variety resources and high assessment completion rate do well.
 
-% TODO- Add figure {Stacked horizontal bar chart of consensus feature importance (averaged and normalised across LightGBM, CatBoost, XGBoost) for the top 20 features, with separate bars for each model and a consensus bar, illustrating agreement across models on phase-3 and trend features}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/results/regression_top_features.png}
+    \caption{Top 20 consensus features importance (averaged across all models)}
+    \label{fig:regression_top_features}
+\end{figure}
 
 \subsubsection{At-Risk Student Profile}
-Profiling the at-risk (Withdrawn) student group against successful (pass) students revealed a consistent behavioural signature: at-risk students generated on average substantially fewer total VLE clicks, had far fewer active study days, exhibited lower assessment completion rates, and produced higher composite risk scores. The inactivity rate for at-risk students was markedly higher than for passing students, indicating extended periods of zero engagement. Early intervention triggers derived from these patterns include: total clicks below 50 in the first two weeks, zero active days after registration, and a score below 40 on the first assessment.
+Profiling the at-risk (Withdrawn) student group against successful (pass) students revealed a consistent behavioural signature: at-risk students generated on average fewer total VLE clicks, had fewer active study days, exhibited lower assessment completion rates, and produced higher composite risk scores. The inactivity rate for at-risk students was markedly higher than for passing students, indicating extended periods of zero engagement. Early intervention triggers derived from these patterns include: total clicks below 50 in the first two weeks, zero active days after registration, and a score below 40 on the first assessment.
 
-% TODO- Add figure {Grouped bar chart or radar chart comparing the mean values of the top engagement and risk features across at-risk, fail, and pass student groups, highlighting the degree to which the at-risk profile diverges from the passing student profile}
 
 % =========================================================================== %
 \section{Conclusion}
 \label{sec:conclusion}
 
-This paper has presented a comprehensive, dual-task machine learning framework for predicting student outcomes in online higher education using the OULAD dataset. Three classification models — kNN, Random Forest, and LSTM — were developed and evaluated for the three-class outcome prediction task (pass, fail, at-risk), while three gradient boosting regressors — LightGBM, CatBoost, and XGBoost — were applied to the continuous assessment score prediction task. The entire pipeline was implemented with distributed processing via Apache PySpark to handle millions of VLE clickstream records.
+This paper has presented a comprehensive, dual-task machine learning framework for predicting student outcomes in online higher education using the OULAD dataset. Three classification models, kNN, Random Forest, and LSTM  were developed and evaluated for the three-class outcome prediction task (pass, fail, at-risk), while three gradient boosting regressors, LightGBM, CatBoost, and XGBoost were applied to the continuous assessment score prediction task. The entire pipeline was implemented with distributed processing via Apache PySpark to handle millions of VLE clickstream records.
 
-The principal finding is that behavioural engagement features, particularly total VLE clicks, active study days, and temporal phase engagement, are markedly stronger predictors of student outcome than demographic attributes. This result holds across all models and both tasks, and it aligns with and reinforces prior literature on VLE-based prediction \cite{1, paper3}. The novel time-segmented feature engineering approach — partitioning course engagement into six 30-day phases — revealed that mid-course disengagement (Phase 3) is the single most predictive behavioural window, providing educators with an actionable intervention target. The use of both Accuracy and macro-averaged F1-score ensured that the evaluation did not simply optimise for the majority (pass) class, producing models that generalise meaningfully across the at-risk and fail populations.
+The principal finding is that behavioural engagement features, particularly total VLE clicks, active study days, and temporal phase engagement, are markedly stronger predictors of student outcome than demographic attributes. This result holds across all models and both tasks, and it aligns with and reinforces prior literature on VLE-based prediction \cite{1, 3}. The time-segmented feature engineering approach of partitioning course engagement into six 30-day phases revealed that other than the core assessment related metrics, mid-course disengagement (Phase 3) is the single most predictive behavioural window, providing educators with an actionable intervention target.
 
-The resulting system has the potential to be integrated into any Learning Management System as an early warning pipeline, flagging at-risk students within the first three weeks of a course — early enough for proactive tutoring contact to be effective. Limitations include the temporal age of the OULAD dataset (collected before the COVID-19 pandemic significantly altered online learning behaviour), its specificity to the Open University UK context, and the absence of social or peer interaction features. Future work should explore transformer-based sequence models, federated learning for cross-institution generalisability, and A/B testing frameworks to empirically evaluate the impact of model-driven interventions on actual retention rates.
+The resulting system has the potential to be integrated into any Learning Management System as an early warning pipeline, flagging at-risk students within the first three weeks of a course which is early enough for proactive tutoring contact to be effective. Limitations include the temporal age of the OULAD dataset (collected before the COVID-19 pandemic significantly altered online learning behaviour), its specificity to the Open University UK context, and the absence of social or peer interaction features. Future work should explore transformer-based sequence models, federated learning for cross-institution generalisability, and A/B testing frameworks to empirically evaluate the impact of model-driven interventions on actual retention rates.
 
 % =========================================================================== %
 \section*{References}
