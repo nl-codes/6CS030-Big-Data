@@ -101,7 +101,7 @@ The end-to-end pipeline is organized into two principal phases: a distributed bi
 \subsection{Dataset}
 The Open University Learning Analytics Dataset (OULAD) is a publicly available relational dataset released by the Open University (UK) \cite{12}. It comprises seven interconnected CSV files covering 22 undergraduate modules spanning multiple academic years, with information on over 32{,}000 students. The dataset encompasses approximately 465 MB of uncompressed data and includes virtual learning environment (VLE) clickstream logs, assessment submissions, student demographics, and course registration records. Table~\ref{tab:oulad_files} summarizes the seven constituent files.
 
-\begin{table}[h!]
+\begin{table}[ht]
 \centering
 \caption{OULAD Dataset File Summary}
 \label{tab:oulad_files}
@@ -228,7 +228,7 @@ Aggregate VLE interaction records, when segmented into the six 30-day phases, re
 \subsection{Cleaning Data}
 The full set of cleaning operations applied is summarized in Table~\ref{tab:cleaning}.
 
-\begin{table}[h!]
+\begin{table}[ht]
 \centering
 \caption{Data Cleaning Operations Applied per Dataset}
 \label{tab:cleaning}
@@ -250,7 +250,7 @@ The full set of cleaning operations applied is summarized in Table~\ref{tab:clea
 \subsubsection{Classification Results}
 Table~\ref{tab:clf_results} reports test-set performance for all three classifiers. The Random Forest classifier achieved the highest overall accuracy among all three models and demonstrated strong macro F1-score performance, indicating balanced identification across all three outcome classes. The kNN model provided a competitive and interpretable baseline. The LSTM model leveraged temporal engagement sequences and performed competitively on the \textit{at\_risk} class, detecting declining engagement trajectories that static feature vectors cannot represent.
 
-\begin{table}[h!]
+\begin{table}[ht]
 \centering
 \caption{Classification Model Comparison — Test Set}
 \label{tab:clf_results}
@@ -263,7 +263,6 @@ LSTM           & 0.6200 & 0.5997 & 0.5715 & 0.5675 \\ \bottomrule
 \end{tabular}
 \end{table}
 
-% TODO- Add figure {Four-panel bar chart comparing kNN, Random Forest, and LSTM on Accuracy, Precision (macro), Recall (macro), and F1-Score (macro) on the test set, with a dashed 0.80 reference line, and value labels above each bar}
 
 \begin{figure}[htbp]
     \centering
@@ -291,7 +290,7 @@ The Random Forest model additionally yielded interpretable feature importance ra
 \subsubsection{Regression Results}
 Table~\ref{tab:reg_results} summarizes the test-set regression metrics for the three gradient boosting models. All three models achieved competitive performance, with LightGBM emerging as the top performer by R\textsuperscript{2}, followed closely by CatBoost and XGBoost.
 
-\begin{table}[h!]
+\begin{table}[ht]
 \centering
 \caption{Regression Model Comparison: Test Set}
 \label{tab:reg_results}
