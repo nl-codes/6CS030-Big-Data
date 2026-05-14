@@ -11,93 +11,101 @@
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
+\usepackage{tabularx}
 \usepackage{booktabs}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
 
 \begin{document}
 
-\title{Big Data Analytics for Predicting Student Success, Failure, and At-Risk Status in Virtual Learning Environments Using Multi-Model Machine Learning}
+\title{A Multi-Model Machine Learning Approach for Predicting Success, Failure, and At-Risk Students' Status to provide early support}
 
 \author{
 \IEEEauthorblockN{1\textsuperscript{st} Narayan Lohani}
-\IEEEauthorblockA{\textit{Faculty of Science and Engineering} \\
-\textit{University of Wolverhampton}\\
-Wolverhampton, United Kingdom \\
-2408869@wlv.ac.uk}
+\IEEEauthorblockA{\textit{Bachelors (Hons) Computer Science} \\
+\textit{Herald College Kathmandu}\\
+Kathmandu, Nepal \\
+np03cs4a230039@heraldcollege.edu.np}
 \and
 \IEEEauthorblockN{2\textsuperscript{nd} Arjabi Shrestha}
-\IEEEauthorblockA{\textit{Faculty of Science and Engineering} \\
-\textit{University of Wolverhampton}\\
-Wolverhampton, United Kingdom \\
-2408286@wlv.ac.uk}
+\IEEEauthorblockA{\textit{Bachelors (Hons) Computer Science} \\
+\textit{Herald College Kathmandu}\\
+Kathmandu, Nepal \\
+np03cs4a230080@heraldcollege.edu.np}
 }
 
 \maketitle
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \begin{abstract}
-Online education has transformed how universities deliver learning, yet dropout and disengagement rates within Virtual Learning Environments (VLEs) remain persistently high. Existing institutions possess substantial behavioural and demographic data about enrolled students, yet lack the analytical frameworks to translate this data into timely, targeted support. This paper presents a multi-model machine learning system built upon the Open University Learning Analytics Dataset (OULAD), comprising over 32{,}000 student records across 22 undergraduate modules, to address two complementary prediction tasks: a three-class classification of student outcome (pass, fail, or at-risk) and a continuous regression of individual assessment scores. The study develops and compares three classification models — k-Nearest Neighbours (kNN), Random Forest (RF), and Long Short-Term Memory (LSTM) networks — alongside three gradient boosting regression models — LightGBM, CatBoost, and XGBoost. All models are trained exclusively on authentic, real-world OULAD data without synthetic augmentation, preserving ecological validity. Distributed data processing is implemented via Apache PySpark to handle the dataset's scale, including millions of VLE clickstream records. Evaluation employs both Accuracy and macro-averaged F1-score to mitigate majority-class bias, and regression performance is assessed via RMSE, MAE, and R\textsuperscript{2}. The proposed system identifies behavioural engagement signals — including total VLE clicks, active study days, and temporal phase engagement — as the dominant predictors of student outcome, substantially outperforming demographic indicators. This work contributes an interpretable, scalable early warning pipeline with the potential to meaningfully improve student retention and institutional support delivery.
+Online education has changed the way universities teach and how students learn, completely reshaping the learning system. However, dropout and disengagement rates in Virtual Learning Environments (VLEs) still remain high. Existing institutions has huge amount of behavioural and demographic data about enrolled students, but they lack analytical frameworks to translate this data into timely, targeted support. This paper presents a multi-model machine learning system built on Open University Learning Analytics Dataset (OULAD), consisting of over 32,000 student records across 22 undergraduate modules. The models addresses two complementary prediction tasks: a three-class classification of student outcome (pass, fail, or at-risk) and a continuous regression of individual assessment scores. The three classification models used for comparision are k-Nearest Neighbours (kNN), Random Forest (RF), and Long Short-Term Memory (LSTM) networks. And the three gradient boosting regression models are LightGBM, CatBoost, and XGBoost. All models are trained exclusively on authentic, real-world OULAD data without any augmentation, preserving its original validity. Distributed data processing is implemented via Apache PySpark to handle the dataset's scale, including millions of VLE clickstream records. Evaluation of classification is done on both Accuracy and macro-averaged F1-score to mitigate majority-class bias, and regression performance is assessed via RMSE, MAE, and R\textsuperscript{2}. The proposed system identifies behavioural engagement signals including total VLE clicks, active study days, and temporal phase engagement as the most dominant predictors of student outcome, substantially outperforming demographic indicators. This work contributes an interpretable, scalable early warning pipeline with the potential to meaningfully improve student retention and on-time support delivery for at-risk students.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Learning Analytics, OULAD, Student Performance Prediction, Random Forest, k-Nearest Neighbours, LSTM, Gradient Boosting, PySpark, Big Data, Educational Data Mining, At-Risk Students, Virtual Learning Environment
+Learning Analytics, OULAD, Student Performance Prediction, Random Forest, k-Nearest Neighbours, LSTM, Gradient Boosting, PySpark, Big Data, Education, At-Risk Students, Virtual Learning Environment
 \end{IEEEkeywords}
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \section{Background of the Study}
 
 \subsection{Generic Information}
-The rapid expansion of online higher education over the past decade has fundamentally altered the relationship between institutions and students. Virtual Learning Environments now serve as the primary conduit for course materials, assessments, and academic communication, generating unprecedented volumes of behavioural data in the process. Learning analytics — the measurement, collection, analysis, and reporting of data about learners — has emerged as a discipline that seeks to harness this data to optimise the learning process \cite{paper12}. Within this domain, predictive modelling occupies a central role: by identifying patterns that distinguish successful students from those at risk of failure or withdrawal, institutions may deploy targeted interventions at a scale and precision previously unattainable.
+The rapid development of online higher education over the past decade has fundamentally changed the relationship between institutions and students. Now Virtual Learning Environments serve as the primary base for course materials, assessments and academic communication generating huge volumes of data in the process. Learning analytics such as measurement, collection, analysis, and reporting of data about learners is essential to optimise the learning process \cite{12}. Within this domain, predictive modelling plays a major role by identifying patterns that distinguish successful students from at risk studnets or students who may consider withdrawal that can be used by institutions to intervene providing necessary support.
 
 \subsection{Problem Statement}
-Despite the data richness of modern VLEs, dropout rates in online higher education remain alarmingly high. The Open University (OU), one of the largest distance-learning institutions in the world, reports that a substantial proportion of enrolled students withdraw before course completion, with many doing so in the belief — frequently erroneous — that they are performing inadequately \cite{paper10}. Unlike face-to-face learning environments, VLEs lack the immediate physical and social cues that enable tutors to detect disengagement early. The resulting ``data paradox'' — abundant behavioural data yet persistently elevated attrition — motivates the need for data-driven predictive systems \cite{paper5}. Social isolation compounds the problem: without structured peer interaction, students experiencing difficulty may disengage silently, reaching a point of no return before any institutional support is offered \cite{paper7, paper11}.
+Despite the big data availability of modern VLEs, online higher education dropout rates still remain alarmingly high. The Open University (OU), one of the largest distance-learning institutions in the world, reports that a considerable proportion of enrolled students withdraw before course completion, with many doing so in the belief that they are performing inadequately \cite{10}. Unlike face-to-face learning environments, VLEs lack the immediate physical and social cues that enable tutors to detect disengagement early. Thus the term``data paradox'' referred as abundant behavioural data yet persistently increasing reduction requires the need for data-driven predictive systems \cite{5}. Social isolation sums up the problem: without structured peer interaction, students experiencing difficulty may disengage silently, reaching a point of no return before any institutional support is offered \cite{7, 11}.
 
 \subsection{Aim and Objectives}
-This research aims to develop and rigorously compare multiple machine learning models — specifically Random Forest, k-Nearest Neighbours, LSTM neural networks, LightGBM, CatBoost, and XGBoost — to accurately predict student success and at-risk status from VLE engagement data embedded in the OULAD dataset. The study further extends prior work by incorporating a continuous regression task for assessment score prediction, enabling more fine-grained and actionable performance forecasting.
+This research aims to develop and rigorously compare following machine learning models Random Forest, k-Nearest Neighbours, LSTM neural networks, LightGBM, CatBoost, and XGBoost. The model will be evaluated in the ability to accurately predict student success and at-risk status from VLE engagement data extracted from the OULAD dataset. This study further extends prior work by incorporating a continuous regression task for assessment score prediction, enabling more fine-grained and actionable performance forecasting.
 
 The specific objectives are:
 \begin{itemize}
-    \item \textbf{Data Structuring}: Extract, merge, and engineer features from all seven OULAD relational CSV files, spanning demographic, assessment, and clickstream data.
+    \item \textbf{Data Structuring}: Extract, merge, and engineer features from all seven OULAD relational CSV files, focusing on demographic, assessment, and clickstream data.
     \item \textbf{Data Preprocessing}: Cleanse each dataset, resolve missing values systematically, and perform Exploratory Data Analysis to surface latent engagement patterns.
-    \item \textbf{Feature Engineering}: Derive 44 behavioural and temporal features for classification, and 50+ time-segmented features across six 30-day course phases for regression.
+    \item \textbf{Feature Engineering}: Derive behavioural and temporal features for classification, and time-segmented features across six 30-day course phases for regression.
     \item \textbf{Model Evaluation}: Train, validate, and benchmark all models using precision, recall, macro-averaged F1-score, RMSE, MAE, and R\textsuperscript{2}, enabling robust multi-metric comparison.
 \end{itemize}
 
 \subsection{Contributions}
-The principal contributions of this work are threefold. First, a distributed big data pipeline using Apache PySpark is developed to process millions of VLE interaction records at scale. Second, a dual-task predictive framework is introduced that addresses both classification and regression from a single unified dataset without reliance on synthetic data or oversampling. Third, a time-segmented feature engineering approach is proposed for the regression task, partitioning each student's 180-day course engagement into six progressive 30-day phases, thereby capturing temporal decline patterns that aggregate features obscure.
+The principal contributions of this work are threefold.
+
+\begin{itemize}
+    \item Distributed big data pipeline using Apache PySpark is developed to process millions of VLE interaction records at scale.
+    \item Dual predictive framework is introduced that addresses both classification and regression from a single unified dataset without relying on synthetic data or oversampling.
+    \item Time-segmented feature engineering approach is proposed for the regression task, partitioning each student's course engagement into six progressive 30-day phases, thereby capturing temporal decline patterns that aggregate features obscure.
+\end{itemize}
 
 \subsection{Organisation of the Report}
 The remainder of this paper is structured as follows. Section~\ref{sec:related} reviews relevant prior literature. Section~\ref{sec:methodology} describes the full data processing and modelling pipeline. Section~\ref{sec:results} presents experimental results and analysis for both tasks. Section~\ref{sec:conclusion} summarises findings and outlines directions for future work.
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \section{Related Work}
 \label{sec:related}
 
-This literature review combines findings from 15 studies to support the proposed research, which aims to build a machine learning system using the Open University Learning Analytics Dataset (OULAD) to predict student success and failure. Previous studies such as \cite{paper1} and \cite{paper3} showed that models like Random Forest (RF), k-NN, and ANN can effectively predict student performance, which supports the proposal's multi-model approach. Other studies, including \cite{paper2} and \cite{paper14}, highlight that student behaviour in the Virtual Learning Environment (VLE), such as forum participation and quiz activity, is more useful than demographic data for understanding engagement and learning patterns. Research from \cite{paper9} and \cite{paper16} also shows that time-based learning data improves the accuracy of identifying at-risk students, while \cite{paper10} explains that many students struggle with balancing time and responsibilities, making temporal analysis important. Studies like \cite{paper5}, \cite{paper7}, and \cite{paper11} further support the need for early intervention systems because online learning can lead to low engagement, social isolation, and higher dropout rates. Unlike earlier research, this proposal avoids synthetic data, compares multiple machine learning models while keeping them interpretable, and uses both Accuracy and F1-score to better identify at-risk students and reduce bias toward majority pass classes.
+This literature review combines findings from 15 papers to support the proposed research, aimed to build a machine learning system using the Open University Learning Analytics Dataset (OULAD) to predict student success and failure. Previous studies such as \cite{1} and \cite{3} showed that models like Random Forest (RF), k-NN, and ANN can effectively predict student performance, which supports the proposal's multi-model approach. Other studies, including \cite{2} and \cite{14}, highlight that student behaviour in the Virtual Learning Environment (VLE), such as forum participation and quiz activity, is more useful than demographic data for understanding engagement and learning patterns. Research from \cite{9} and \cite{16} also shows that time-based learning data improves the accuracy of identifying at-risk students, while \cite{10} explains that many students struggle with balancing time and responsibilities, making temporal analysis important. Studies like \cite{5}, \cite{7}, and \cite{11} further support the need for early intervention systems because online learning can lead to low engagement, social isolation, and higher dropout rates. Unlike earlier research, this proposal avoids synthetic data, compares multiple machine learning models while keeping them interpretable, and uses both Accuracy and F1-score to better identify at-risk students and reduce bias toward majority pass classes.
 
-Several additional studies enrich this foundation. The work of \cite{paper6} demonstrates that flexible feature selection strategies — adapting to the specific characteristics of online course populations — can meaningfully improve generalisation performance, a principle directly informing the feature engineering approach adopted here. Studies by \cite{paper4} and \cite{paper8} establish the psychological and behavioural mediators of online engagement, confirming that clickstream patterns are proxies for deeper motivational constructs rather than incidental artefacts. Systematic reviews such as \cite{paper12} and \cite{paper15} consolidate findings across dozens of OULAD-based studies, identifying replication gaps that the present work addresses by using authentic data and multi-metric evaluation. The ANN equation governing the LSTM's output layer follows the standard formulation:
-\begin{equation}
-    O_{j}=\sigma\!\left(b+\sum_{i=1}^{m}W_{ij}\cdot X_{i}\right) \label{eq:ann}
-\end{equation}
-where $\sigma$ denotes the activation function, $W_{ij}$ the learned weights, $X_i$ the input features, and $b$ the bias term \cite{paper3}.
+Several additional studies enrich this foundation. The work of \cite{6} demonstrates that flexible feature selection strategies such as adapting to the specific characteristics of online course populations can meaningfully improve generalisation performance, a principle directly informing the feature engineering approach adopted here. Work done by \cite{4} and \cite{8} establish the psychological and behavioural mediators of online engagement, confirming that clickstream patterns are proxies for deeper motivational constructs rather than incidental artefacts. Systematic reviews such as \cite{12} and \cite{15} consolidate findings across dozens of OULAD-based studies, identifying replication gaps that the present work addresses by using authentic data and multi-metric evaluation.
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \section{Methodology}
 \label{sec:methodology}
 
-The end-to-end pipeline is organised into two principal phases: a distributed big data processing phase implemented in Apache PySpark, and a machine learning phase implemented in scikit-learn, TensorFlow/Keras, LightGBM, CatBoost, and XGBoost. The high-level architecture follows a standard Extract-Transform-Load-Model-Evaluate paradigm.
+The end-to-end pipeline is organised into two principal phases: a distributed big data processing phase implemented in Apache PySpark, and a machine learning phase implemented in scikit-learn, TensorFlow. The high-level architecture follows a standard Extract-Transform-Load-Model-Evaluate paradigm.
 
-% TODO- Add figure {Block diagram of the full two-phase pipeline: PySpark Phase (Load CSVs → Clean → Join → Feature Engineering → Convert to Pandas) followed by ML Phase (Encode → Split → Scale → Train Models → Evaluate → Compare)}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\columnwidth]{Assets/block_diagram.png}
+    \caption{System Block Diagram showing the architectural components.}
+    \label{fig:block_diagram}
+\end{figure}
 
 \subsection{Dataset}
-The Open University Learning Analytics Dataset (OULAD) is a publicly available relational dataset released by the Open University (UK) \cite{paper12}. It comprises seven interconnected CSV files covering 22 undergraduate modules spanning multiple academic years, with information on over 32{,}000 students. The dataset encompasses approximately 465 MB of uncompressed data and includes virtual learning environment (VLE) clickstream logs, assessment submissions, student demographics, and course registration records. Table~\ref{tab:oulad_files} summarises the seven constituent files.
+The Open University Learning Analytics Dataset (OULAD) is a publicly available relational dataset released by the Open University (UK) \cite{12}. It comprises seven interconnected CSV files covering 22 undergraduate modules spanning multiple academic years, with information on over 32{,}000 students. The dataset encompasses approximately 465 MB of uncompressed data and includes virtual learning environment (VLE) clickstream logs, assessment submissions, student demographics, and course registration records. Table~\ref{tab:oulad_files} summarises the seven constituent files.
 
 \begin{table}[h!]
 \centering
 \caption{OULAD Dataset File Summary}
 \label{tab:oulad_files}
-\begin{tabular}{p{2.2cm}p{5.5cm}}
+\begin{tabularx}{\columnwidth}{l X}
 \toprule
 \textbf{File} & \textbf{Key Information} \\ \midrule
 \texttt{studentInfo.csv} & Demographics, prior education, disability, final result \\
@@ -107,7 +115,7 @@ The Open University Learning Analytics Dataset (OULAD) is a publicly available r
 \texttt{studentRegistration.csv} & Registration and unregistration dates \\
 \texttt{courses.csv} & Module length and presentation period \\
 \texttt{vle.csv} & VLE resource catalogue and activity types \\ \bottomrule
-\end{tabular}
+\end{tabularx}
 \end{table}
 
 \subsection{Phase 1: Distributed Data Processing (PySpark)}
@@ -154,7 +162,7 @@ CatBoost uses ordered boosting with maximum tree depth of 6 and L2 leaf regulari
 \subsubsection{XGBoost}
 XGBoost was configured with \texttt{max\_depth=6}, L1 regularisation ($\alpha=0.1$), and L2 regularisation ($\lambda=1.0$), with row and column subsampling at 80\%.
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \section{Results and Discussion}
 \label{sec:results}
 
@@ -169,7 +177,7 @@ The seven OULAD CSV files were loaded into both Pandas (for initial inspection) 
 After remapping the four original \texttt{final\_result} categories to three target classes, the distribution was approximately: \textit{pass} (majority), \textit{at\_risk} (Withdrawn, moderate), and \textit{fail} (minority). The resulting class imbalance motivated the use of balanced class weights during training and the adoption of macro-averaged F1-score as a co-primary metric alongside accuracy.
 
 \subsubsection{Feature Correlation Analysis}
-Point-biserial correlation analysis between each numeric feature and the binary pass indicator revealed that total VLE clicks, active days, and engagement frequency were the features most positively correlated with passing. Inactivity rate, failed assessments count, and the composite risk score were most negatively correlated (associated with fail or at-risk outcomes). Demographic features including age band, gender, and region exhibited markedly lower correlations, confirming that behavioural engagement substantially outperforms demographic proxies as a predictor of outcome \cite{paper2, paper14}.
+Point-biserial correlation analysis between each numeric feature and the binary pass indicator revealed that total VLE clicks, active days, and engagement frequency were the features most positively correlated with passing. Inactivity rate, failed assessments count, and the composite risk score were most negatively correlated (associated with fail or at-risk outcomes). Demographic features including age band, gender, and region exhibited markedly lower correlations, confirming that behavioural engagement substantially outperforms demographic proxies as a predictor of outcome \cite{2, 14}.
 
 % TODO- Add figure {Correlation heatmap of the top 15 most discriminative features against each other, showing strong positive inter-correlation among engagement metrics and negative correlations between engagement and risk features}
 
@@ -228,7 +236,7 @@ LSTM           & 0.8010 & 0.7890 & 0.7870 & 0.7880 \\ \bottomrule
 
 % TODO- Add figure {Side-by-side confusion matrices for kNN, Random Forest, and LSTM on the test set, with rows as True Labels and columns as Predicted Labels, using Blues, Greens, and YlOrRd colourmaps respectively, and annotated cell counts}
 
-The Random Forest model additionally yielded interpretable feature importance rankings. The five most important features by Gini impurity were total VLE clicks, active days, average clicks per day, average assessment score, and assessment completion rate. Demographic features ranked markedly lower, corroborating findings from \cite{paper2} and \cite{paper14} that behavioural signals dominate demographic predictors in educational outcome modelling. The LSTM's temporal architecture conferred a particular advantage in identifying at-risk students whose engagement declined significantly after the first few weeks of study — a pattern consistent with the early warning signal literature \cite{paper9}.
+The Random Forest model additionally yielded interpretable feature importance rankings. The five most important features by Gini impurity were total VLE clicks, active days, average clicks per day, average assessment score, and assessment completion rate. Demographic features ranked markedly lower, corroborating findings from \cite{2} and \cite{14} that behavioural signals dominate demographic predictors in educational outcome modelling. The LSTM's temporal architecture conferred a particular advantage in identifying at-risk students whose engagement declined significantly after the first few weeks of study — a pattern consistent with the early warning signal literature \cite{9}.
 
 % TODO- Add figure {Horizontal bar chart of the top 25 Random Forest feature importances by Gini impurity, with feature names on the y-axis and importance values on the x-axis, colour-graded from red (lower importance) to green (higher importance)}
 
@@ -254,7 +262,7 @@ XGBoost   & 12.35 & 9.01 & 15.10 & 0.7140 \\ \bottomrule
 % TODO- Add figure {Scatter plot of actual versus predicted assessment scores for the best regression model (LightGBM) on the test set, with a red dashed perfect-prediction diagonal line, alongside a residual histogram showing the distribution of prediction errors}
 
 \subsubsection{Temporal Feature Importance in Regression}
-The consensus feature importance analysis across all three regression models revealed that Phase 3 (days 60--90) features contributed the greatest aggregate importance, followed by Phase 5 and Phase 6 features. This finding is consistent with the educational literature suggesting that mid-course engagement — corresponding to the period of first major assessed work — is the strongest indicator of final performance \cite{paper9}. The \textit{engagement\_trend\_slope} feature and late-phase click ratios also ranked among the top predictors, confirming that students with declining engagement trajectories are at substantially elevated risk regardless of their early course performance.
+The consensus feature importance analysis across all three regression models revealed that Phase 3 (days 60--90) features contributed the greatest aggregate importance, followed by Phase 5 and Phase 6 features. This finding is consistent with the educational literature suggesting that mid-course engagement — corresponding to the period of first major assessed work — is the strongest indicator of final performance \cite{9}. The \textit{engagement\_trend\_slope} feature and late-phase click ratios also ranked among the top predictors, confirming that students with declining engagement trajectories are at substantially elevated risk regardless of their early course performance.
 
 % TODO- Add figure {Stacked horizontal bar chart of consensus feature importance (averaged and normalised across LightGBM, CatBoost, XGBoost) for the top 20 features, with separate bars for each model and a consensus bar, illustrating agreement across models on phase-3 and trend features}
 
@@ -263,51 +271,51 @@ Profiling the at-risk (Withdrawn) student group against successful (pass) studen
 
 % TODO- Add figure {Grouped bar chart or radar chart comparing the mean values of the top engagement and risk features across at-risk, fail, and pass student groups, highlighting the degree to which the at-risk profile diverges from the passing student profile}
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \section{Conclusion}
 \label{sec:conclusion}
 
 This paper has presented a comprehensive, dual-task machine learning framework for predicting student outcomes in online higher education using the OULAD dataset. Three classification models — kNN, Random Forest, and LSTM — were developed and evaluated for the three-class outcome prediction task (pass, fail, at-risk), while three gradient boosting regressors — LightGBM, CatBoost, and XGBoost — were applied to the continuous assessment score prediction task. The entire pipeline was implemented with distributed processing via Apache PySpark to handle millions of VLE clickstream records.
 
-The principal finding is that behavioural engagement features, particularly total VLE clicks, active study days, and temporal phase engagement, are markedly stronger predictors of student outcome than demographic attributes. This result holds across all models and both tasks, and it aligns with and reinforces prior literature on VLE-based prediction \cite{paper1, paper3}. The novel time-segmented feature engineering approach — partitioning course engagement into six 30-day phases — revealed that mid-course disengagement (Phase 3) is the single most predictive behavioural window, providing educators with an actionable intervention target. The use of both Accuracy and macro-averaged F1-score ensured that the evaluation did not simply optimise for the majority (pass) class, producing models that generalise meaningfully across the at-risk and fail populations.
+The principal finding is that behavioural engagement features, particularly total VLE clicks, active study days, and temporal phase engagement, are markedly stronger predictors of student outcome than demographic attributes. This result holds across all models and both tasks, and it aligns with and reinforces prior literature on VLE-based prediction \cite{1, paper3}. The novel time-segmented feature engineering approach — partitioning course engagement into six 30-day phases — revealed that mid-course disengagement (Phase 3) is the single most predictive behavioural window, providing educators with an actionable intervention target. The use of both Accuracy and macro-averaged F1-score ensured that the evaluation did not simply optimise for the majority (pass) class, producing models that generalise meaningfully across the at-risk and fail populations.
 
 The resulting system has the potential to be integrated into any Learning Management System as an early warning pipeline, flagging at-risk students within the first three weeks of a course — early enough for proactive tutoring contact to be effective. Limitations include the temporal age of the OULAD dataset (collected before the COVID-19 pandemic significantly altered online learning behaviour), its specificity to the Open University UK context, and the absence of social or peer interaction features. Future work should explore transformer-based sequence models, federated learning for cross-institution generalisability, and A/B testing frameworks to empirically evaluate the impact of model-driven interventions on actual retention rates.
 
-%% ──────────────────────────────────────────────────────────────────────────
+% =========================================================================== %
 \section*{References}
 \begin{thebibliography}{00}
 
-\bibitem{paper1} M. Jawad, A. Khlaif, S. Farhan, and R. Salim, ``Students' academic performance and engagement prediction in a virtual learning environment using random forest with data balancing,'' \textit{IEEE Access}, vol. 10, pp. 48481--48492, 2022.
+\bibitem{1} M. Jawad, A. Khlaif, S. Farhan, and R. Salim, ``Students' academic performance and engagement prediction in a virtual learning environment using random forest with data balancing,'' \textit{IEEE Access}, vol. 10, pp. 48481--48492, 2022.
 
-\bibitem{paper2} M. Vermeulen and M. Volman, ``Promoting student engagement in online education: Online learning experiences of Dutch university students,'' \textit{Distance Education}, vol. 45, no. 2, pp. 185--202, 2024.
+\bibitem{2} M. Vermeulen and M. Volman, ``Promoting student engagement in online education: Online learning experiences of Dutch university students,'' \textit{Distance Education}, vol. 45, no. 2, pp. 185--202, 2024.
 
-\bibitem{paper3} A. Alnassar, F. Alhajlah, and A. Almutairi, ``How well a student performed? A machine learning approach to classify students' performance on virtual learning environment,'' \textit{IEEE Access}, vol. 9, pp. 113828--113843, 2021.
+\bibitem{3} A. Alnassar, F. Alhajlah, and A. Almutairi, ``How well a student performed? A machine learning approach to classify students' performance on virtual learning environment,'' \textit{IEEE Access}, vol. 9, pp. 113828--113843, 2021.
 
-\bibitem{paper4} Y. Li and J. Xue, ``Dynamic interaction between student learning behaviour and learning environment,'' \textit{Journal of Educational Technology \& Society}, vol. 26, no. 1, pp. 58--71, 2023.
+\bibitem{4} Y. Li and J. Xue, ``Dynamic interaction between student learning behaviour and learning environment,'' \textit{Journal of Educational Technology \& Society}, vol. 26, no. 1, pp. 58--71, 2023.
 
-\bibitem{paper5} C. Akpen, N. Allotey, and O. Osei, ``Impact of online learning on student's performance and engagement: A systematic review,'' \textit{Education and Information Technologies}, vol. 29, no. 4, pp. 4781--4803, 2024.
+\bibitem{5} C. Akpen, N. Allotey, and O. Osei, ``Impact of online learning on student's performance and engagement: A systematic review,'' \textit{Education and Information Technologies}, vol. 29, no. 4, pp. 4781--4803, 2024.
 
-\bibitem{paper6} Z. Hussain, A. Hussain, and M. Hussain, ``A flexible feature selection approach for predicting students' academic performance in online courses,'' \textit{Computers \& Education}, vol. 183, p. 104501, 2022.
+\bibitem{6} Z. Hussain, A. Hussain, and M. Hussain, ``A flexible feature selection approach for predicting students' academic performance in online courses,'' \textit{Computers \& Education}, vol. 183, p. 104501, 2022.
 
-\bibitem{paper7} N. Rasheed, A. Khan, and M. Shafi, ``Facilitating flexible learning by replacing classroom time with an online learning environment: A systematic review of blended learning in higher education,'' \textit{Computers \& Education}, vol. 175, p. 104317, 2021.
+\bibitem{7} N. Rasheed, A. Khan, and M. Shafi, ``Facilitating flexible learning by replacing classroom time with an online learning environment: A systematic review of blended learning in higher education,'' \textit{Computers \& Education}, vol. 175, p. 104317, 2021.
 
-\bibitem{paper8} A. Martin and H. Bolliger, ``Student perceptions of online active learning practices and online learning climate predict online course engagement,'' \textit{Online Learning}, vol. 26, no. 1, pp. 1--23, 2022.
+\bibitem{8} A. Martin and H. Bolliger, ``Student perceptions of online active learning practices and online learning climate predict online course engagement,'' \textit{Online Learning}, vol. 26, no. 1, pp. 1--23, 2022.
 
-\bibitem{paper9} E. Ntourmas, N. Avouris, and D. Daskalaki, ``Does time matter in analyzing educational data? A new dataset for streaming learning analytics,'' \textit{IEEE Transactions on Learning Technologies}, vol. 16, no. 3, pp. 364--376, 2023.
+\bibitem{9} E. Ntourmas, N. Avouris, and D. Daskalaki, ``Does time matter in analyzing educational data? A new dataset for streaming learning analytics,'' \textit{IEEE Transactions on Learning Technologies}, vol. 16, no. 3, pp. 364--376, 2023.
 
-\bibitem{paper10} O. Kizilcec, E. Pérez-Sanagustín, and J. Maldonado, ``Persistence and time challenges in an open online university: A case study of the experiences of first-year learners,'' \textit{Computers in Human Behavior}, vol. 146, p. 107801, 2023.
+\bibitem{10} O. Kizilcec, E. Pérez-Sanagustín, and J. Maldonado, ``Persistence and time challenges in an open online university: A case study of the experiences of first-year learners,'' \textit{Computers in Human Behavior}, vol. 146, p. 107801, 2023.
 
-\bibitem{paper11} A. Bozkurt, N. Akgün-Özbek, and O. Zawacki-Richter, ``The tensions between student dropout and flexibility in learning design: The voices of professors in open online higher education,'' \textit{International Review of Research in Open and Distributed Learning}, vol. 23, no. 2, pp. 1--22, 2022.
+\bibitem{11} A. Bozkurt, N. Akgün-Özbek, and O. Zawacki-Richter, ``The tensions between student dropout and flexibility in learning design: The voices of professors in open online higher education,'' \textit{International Review of Research in Open and Distributed Learning}, vol. 23, no. 2, pp. 1--22, 2022.
 
-\bibitem{paper12} R. Waheed, A. Kaur, and N. Ain, ``Predictive modelling with the open university learning analytics dataset OULAD: A systematic literature review,'' \textit{Computers \& Education: Artificial Intelligence}, vol. 2, p. 100011, 2021.
+\bibitem{12} R. Waheed, A. Kaur, and N. Ain, ``Predictive modelling with the open university learning analytics dataset OULAD: A systematic literature review,'' \textit{Computers \& Education: Artificial Intelligence}, vol. 2, p. 100011, 2021.
 
-\bibitem{paper13} M. Alqahtani and H. Mohammad, ``Factors influencing online learning satisfaction,'' \textit{European Journal of Educational Research}, vol. 10, no. 3, pp. 1253--1267, 2021.
+\bibitem{13} M. Alqahtani and H. Mohammad, ``Factors influencing online learning satisfaction,'' \textit{European Journal of Educational Research}, vol. 10, no. 3, pp. 1253--1267, 2021.
 
-\bibitem{paper14} C. Zhang, J. Xu, and L. Wang, ``E-learning behavior categories and influencing factors of STEM courses: A case study of the open university learning analysis dataset (OULAD),'' \textit{Computers \& Education}, vol. 181, p. 104451, 2022.
+\bibitem{14} C. Zhang, J. Xu, and L. Wang, ``E-learning behavior categories and influencing factors of STEM courses: A case study of the open university learning analysis dataset (OULAD),'' \textit{Computers \& Education}, vol. 181, p. 104451, 2022.
 
-\bibitem{paper15} R. Assunção Flores and P. Duarte Silveira, ``An extensive examination of varied approaches in e-learning and MOOC research: A thorough overview,'' \textit{Interactive Learning Environments}, vol. 31, no. 10, pp. 6391--6410, 2023.
+\bibitem{15} R. Assunção Flores and P. Duarte Silveira, ``An extensive examination of varied approaches in e-learning and MOOC research: A thorough overview,'' \textit{Interactive Learning Environments}, vol. 31, no. 10, pp. 6391--6410, 2023.
 
-\bibitem{paper16} B. Kardan, A. Bentahar, and N. Benachour, ``Streaming approaches for temporal educational data mining and learning analytics,'' \textit{Expert Systems with Applications}, vol. 202, p. 117275, 2022.
+\bibitem{16} B. Kardan, A. Bentahar, and N. Benachour, ``Streaming approaches for temporal educational data mining and learning analytics,'' \textit{Expert Systems with Applications}, vol. 202, p. 117275, 2022.
 
 \end{thebibliography}
 
